@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SceneTune AI | AI Destekli Müzik Öneri Sistemi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .lang-selector {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .lang-selector select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(78,205,196,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+        .tagline {
+            color: rgba(255,255,255,0.7);
+            margin-top: 10px;
+        }
+        .input-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        .btn-primary {
+            margin-top: 15px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .psychology-note {
+            background: rgba(78,205,196,0.1);
+            border-left: 4px solid #4ecdc4;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+        }
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .tag {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .playlist-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .playlist-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .song-info h4 {
+            margin-bottom: 5px;
+        }
+        .song-info p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .song-link {
+            background: #1db954;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .song-link:hover {
+            background: #1ed760;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+        }
+        .scenario-suggestions {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .suggestion-chip {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .suggestion-chip:hover {
+            background: #4ecdc4;
+            color: #0a0a2a;
+        }
+        .error-message {
+            background: rgba(255,107,107,0.2);
+            border-left: 4px solid #ff6b6b;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lang-selector">
+            <select id="language">
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="en">🇬🇧 English</option>
+            </select>
+        </div>
+
+        <header>
+            <h1>🎭 SceneTune <span style="background: linear-gradient(135deg, #4ecdc4, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span></h1>
+            <div class="badge">🤖 AI Destekli | 🎵 Müzik Öneri</div>
+            <p class="tagline" id="tagline">Hayal ettiğin sahneyi yaz, sana müziğini bulalım</p>
+        </header>
+
+        <div class="input-area">
+            <label id="scenario-label">✨ Hayal ettiğin senaryoyu anlat:</label>
+            <textarea id="scenario" rows="4" placeholder='Örneğin: "Geceleri büyük şehirde tek başıma yürüyorum, kimseye ihtiyacım yok, güçlü ve soğuk hissediyorum"'></textarea>
+            
+            <div class="scenario-suggestions">
+                <span class="suggestion-chip" data-scenario="Podyumda yürüyorum, herkes bana bakıyor, çok özel hissediyorum">👠 Podyum</span>
+                <span class="suggestion-chip" data-scenario="Gece arabayla şehirde dolaşıyorum, kimseye ait hissetmiyorum">🌃 Gece Sürüşü</span>
+                <span class="suggestion-chip" data-scenario="Eski sevgilime rastladım, çok değişmiştim, hiçbir şey söylemedim">💔 Eski Aşk</span>
+                <span class="suggestion-chip" data-scenario="Lüks bir davette tek başımayım, herkes bana bakıyor">🍾 Lüks Davet</span>
+                <span class="suggestion-chip" data-scenario="Yağmurlu cam kenarında oturuyorum, hayatımı film gibi izliyorum">☔ Yağmurlu Gün</span>
+                <span class="suggestion-chip" data-scenario="Çok güçlüyüm, kimse beni durduramaz, ulaşılmazım">💪 Güçlü Hissetmek</span>
+            </div>
+            
+            <button class="btn-primary" id="generateBtn">🎵 Müziklerimi Bul</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p id="loadingText">AI senaryonu analiz ediyor, en uygun şarkıları buluyor...</p>
+        </div>
+
+        <div id="results" style="display: none;">
+            <div class="psychology-note" id="psychologyNote">
+                <div style="font-size: 2rem;">🧠</div>
+                <div id="psychoText"></div>
+            </div>
+            <div class="tags-container" id="tagsContainer"></div>
+            <div id="playlist"></div>
+        </div>
+
+        <div id="errorMessage" style="display: none;" class="error-message"></div>
+
+        <footer>
+            <p>✨ Her senaryo bir hikaye, her hikaye bir şarkı ✨</p>
+        </footer>
+    </div>
+
+    <script>
+        // API URL - DÜZELTİLDİ
+        const API_URL = 'http://127.0.0.1:5000/api/recommend';
+        
+        const translations = {
+            tr: {
+                tagline: "Hayal ettiğin sahneyi yaz, sana müziğini bulalım",
+                label: "✨ Hayal ettiğin senaryoyu anlat:",
+                placeholder: 'Örneğin: "Geceleri büyük şehirde tek başıma yürüyorum"',
+                button: "🎵 Müziklerimi Bul",
+                loading: "AI senaryonu analiz ediyor, en uygun şarkıları buluyor...",
+                error: "Bir hata oluştu. Lütfen tekrar deneyin."
+            },
+            en: {
+                tagline: "Write your dream scene, we'll find your soundtrack",
+                label: "✨ Describe your daydream scenario:",
+                placeholder: 'Example: "Walking alone in the city at night"',
+                button: "🎵 Find My Music",
+                loading: "AI is analyzing your scenario, finding the perfect songs...",
+                error: "An error occurred. Please try again."
+            }
+        };
+
+        let currentLang = 'tr';
+
+        document.getElementById('language').addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            document.getElementById('tagline').textContent = translations[currentLang].tagline;
+            document.getElementById('scenario-label').textContent = translations[currentLang].label;
+            document.getElementById('scenario').placeholder = translations[currentLang].placeholder;
+            document.getElementById('generateBtn').innerHTML = translations[currentLang].button;
+            document.getElementById('loadingText').textContent = translations[currentLang].loading;
+        });
+
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.getElementById('scenario').value = chip.getAttribute('data-scenario');
+            });
+        });
+
+        async function getRecommendations(scenario, language) {
+            console.log("📤 İSTEK GÖNDERİLİYOR:", scenario);
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ scenario, language })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API hatası: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const scenario = document.getElementById('scenario').value.trim();
+            
+            if (!scenario) {
+                alert(currentLang === 'tr' ? 'Lütfen bir senaryo yazın!' : 'Please write a scenario!');
+                return;
+            }
+            
+            console.log("🔘 BUTONA TIKLANDI, SENARYO:", scenario);
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('generateBtn').disabled = true;
+            
+            try {
+                const data = await getRecommendations(scenario, currentLang);
+                console.log("📥 GELEN VERİ:", data);
+                
+                document.getElementById('psychoText').textContent = data.psychology_note;
+                
+                const tagsContainer = document.getElementById('tagsContainer');
+                tagsContainer.innerHTML = '';
+                if (data.tags && data.tags.length > 0) {
+                    data.tags.forEach(tag => {
+                        tagsContainer.innerHTML += `<span class="tag">#${tag}</span>`;
+                    });
+                }
+                
+                const playlistDiv = document.getElementById('playlist');
+                playlistDiv.innerHTML = '';
+                
+                if (data.songs && data.songs.length > 0) {
+                    data.songs.forEach(song => {
+                        playlistDiv.innerHTML += `
+                            <div class="playlist-card">
+                                <div class="song-info">
+                                    <h4>${song.title}</h4>
+                                    <p>${song.artist}</p>
+                                </div>
+                                <a href="${song.url}" target="_blank" class="song-link">Spotify'da Aç ▶</a>
+                            </div>
+                        `;
+                    });
+                } else {
+                    playlistDiv.innerHTML = '<p style="text-align:center;">🎵 Şarkı bulunamadı.</p>';
+                }
+                
+                document.getElementById('results').style.display = 'block';
+                
+            } catch (error) {
+                console.error('❌ HATA:', error);
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = translations[currentLang].error + ' ' + error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
